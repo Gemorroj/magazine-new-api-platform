@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\PartialSearchFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -11,6 +12,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use ApiPlatform\Metadata\QueryParameter;
 use App\Repository\CategoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -24,7 +26,14 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\HasLifecycleCallbacks]
 #[ApiResource(
     operations: [
-        new GetCollection(),
+        new GetCollection(
+            parameters: [
+                'search[:property]' => new QueryParameter(
+                    filter: new PartialSearchFilter(),
+                    properties: ['name'],
+                ),
+            ],
+        ),
         new Post(security: "is_granted('ROLE_ADMIN')"),
         new Get(),
         new Put(security: "is_granted('ROLE_ADMIN')"),
@@ -65,7 +74,6 @@ final class Category
      */
     #[ORM\OneToMany(targetEntity: Product::class, mappedBy: 'category', cascade: ['persist'], fetch: 'LAZY', orphanRemoval: true)]
     #[ORM\JoinColumn(name: 'id', referencedColumnName: 'category_id', nullable: true, onDelete: 'CASCADE')]
-    #[Groups(['category:read'])]
     private Collection $products;
 
     public function __construct()
